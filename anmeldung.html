@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Anmeldung – Cloud der Familie Becker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --bg-top: #f5f5f7;
+    --bg-bottom: #e8e8ed;
+    --text-primary: #1d1d1f;
+    --text-secondary: #6e6e73;
+    --accent: #0071e3;
+    --accent-hover: #0077ed;
+    --card-bg: rgba(255, 255, 255, 0.72);
+    --border-subtle: rgba(0, 0, 0, 0.08);
+    --success: #34c759;
+    --danger: #ff3b30;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .app {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .view {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 24px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(12px) scale(0.99);
+    transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1), transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .view.active {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+  }
+
+  .eyebrow {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-size: clamp(28px, 5vw, 44px);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    margin: 0 0 14px 0;
+    text-align: center;
+  }
+
+  p.subtitle {
+    font-size: 17px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    max-width: 480px;
+    text-align: center;
+    margin: 0 0 36px 0;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--card-bg);
+    -webkit-backdrop-filter: blur(30px);
+    backdrop-filter: blur(30px);
+    border: 1px solid var(--border-subtle);
+    border-radius: 20px;
+    padding: 36px 32px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+  }
+
+  .field {
+    margin-bottom: 18px;
+    text-align: left;
+  }
+
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+
+  .field input {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border-subtle);
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    font-family: inherit;
+  }
+
+  .field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.12);
+  }
+
+  .field .error-msg {
+    display: none;
+    font-size: 12px;
+    color: var(--danger);
+    margin-top: 6px;
+  }
+
+  .field.invalid input {
+    border-color: var(--danger);
+  }
+
+  .field.invalid .error-msg {
+    display: block;
+  }
+
+  .btn {
+    appearance: none;
+    border: none;
+    border-radius: 980px;
+    padding: 14px 28px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .btn:active { transform: scale(0.97); }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  .btn-primary:hover { background: var(--accent-hover); }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--border-subtle);
+    margin-top: 12px;
+    width: 100%;
+  }
+
+  .btn-secondary:hover { background: rgba(0, 113, 227, 0.06); }
+
+  .btn-row {
+    display: flex;
+    gap: 14px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .btn-row .btn { width: auto; min-width: 200px; }
+
+  .icon-circle {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: rgba(52, 199, 89, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+
+  .icon-circle svg { width: 34px; height: 34px; }
+
+  footer.legal-link {
+    position: absolute;
+    bottom: 24px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  footer.legal-link a {
+    color: var(--text-secondary);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .impressum-text {
+    text-align: left;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    max-width: 460px;
+  }
+
+  .password-toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: -8px;
+    margin-bottom: 18px;
+  }
+
+  .password-toggle-row input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+  }
+
+  .password-toggle-row label {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .step-note {
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-align: left;
+    background: rgba(0, 113, 227, 0.06);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-top: 20px;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 480px) {
+    .card { padding: 28px 22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Startbildschirm -->
+  <section class="view active" id="view-start">
+    <div class="eyebrow">Cloud der Familie Becker</div>
+    <h1>Willkommen zur Anmeldung</h1>
+    <p class="subtitle">Trage hier bequem deinen Namen, deine E-Mail-Adresse und dein Wunschpasswort ein. Deine Daten werden anschließend als Excel-Datei bereitgestellt.</p>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="showView('form')">Jetzt anmelden</button>
+      <button class="btn btn-secondary" onclick="showView('impressum')">Impressum</button>
+    </div>
+    <div class="btn-row" style="margin-top: 4px;">
+      <a class="btn btn-secondary" href="index.html">Zurück zur Startseite</a>
+    </div>
+  </section>
+
+  <!-- Formular -->
+  <section class="view" id="view-form">
+    <div class="card">
+      <h1 style="font-size:26px; text-align:left; margin-bottom:6px;">Deine Daten</h1>
+      <p class="subtitle" style="text-align:left; margin-bottom:24px; font-size:14px;">Alle Felder sind erforderlich.</p>
+
+      <div class="field" id="field-name">
+        <label for="input-name">Name</label>
+        <input type="text" id="input-name" placeholder="Vor- und Nachname" autocomplete="name">
+        <div class="error-msg">Bitte gib deinen Namen ein.</div>
+      </div>
+
+      <div class="field" id="field-email">
+        <label for="input-email">E-Mail</label>
+        <input type="email" id="input-email" placeholder="name@beispiel.de" autocomplete="email">
+        <div class="error-msg">Bitte gib eine gültige E-Mail-Adresse ein.</div>
+      </div>
+
+      <div class="field" id="field-password">
+        <label for="input-password">Passwort</label>
+        <input type="password" id="input-password" placeholder="Mindestens 6 Zeichen" autocomplete="new-password">
+        <div class="error-msg">Das Passwort muss mindestens 6 Zeichen lang sein.</div>
+      </div>
+
+      <div class="password-toggle-row">
+        <input type="checkbox" id="toggle-password" onchange="togglePassword()">
+        <label for="toggle-password">Passwort anzeigen</label>
+      </div>
+
+      <button class="btn btn-primary" onclick="submitForm()">Absenden &amp; Excel erstellen</button>
+      <button class="btn btn-secondary" onclick="showView('start')">Zurück</button>
+    </div>
+  </section>
+
+  <!-- Erfolg -->
+  <section class="view" id="view-success">
+    <div class="icon-circle">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M5 13l4 4L19 7" stroke="#34c759" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h1>Fast geschafft!</h1>
+    <p class="subtitle">Deine Excel-Datei wurde heruntergeladen. Bitte sende sie jetzt per E-Mail an den Admin.</p>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-send-mail" onclick="openMailApp()">E-Mail an Admin öffnen</button>
+    </div>
+    <div class="step-note">
+      Die Mail-App öffnet sich mit vorausgefüllter Adresse und Betreff. Bitte hänge die heruntergeladene Datei manuell als Anhang an, bevor du sendest.
+    </div>
+    <button class="btn btn-secondary" style="max-width:420px;" onclick="resetForm()">Weitere Person anmelden</button>
+  </section>
+
+  <!-- Impressum -->
+  <section class="view" id="view-impressum">
+    <h1>Impressum</h1>
+    <div class="card">
+      <div class="impressum-text">
+        Nicolai Johann Becker<br>
+        Gesetzlicher Vertreter: Dr. Alexander Becker<br>
+        Wilhelm-Tell-Straße 16a<br>
+        76470 Ötigheim<br><br>
+        Telefon: +49 152 03256220<br>
+        E-Mail: admin@familiebecker.cloud
+      </div>
+      <button class="btn btn-secondary" onclick="showView('start')">Zurück</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  let lastEntry = null;
+
+  function showView(name) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + name).classList.add('active');
+  }
+
+  function togglePassword() {
+    const input = document.getElementById('input-password');
+    const show = document.getElementById('toggle-password').checked;
+    input.type = show ? 'text' : 'password';
+  }
+
+  function setInvalid(fieldId, invalid) {
+    const el = document.getElementById(fieldId);
+    el.classList.toggle('invalid', invalid);
+  }
+
+  function isValidEmail(value) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  }
+
+  function submitForm() {
+    const name = document.getElementById('input-name').value.trim();
+    const email = document.getElementById('input-email').value.trim();
+    const password = document.getElementById('input-password').value;
+
+    let valid = true;
+
+    if (name.length < 2) { setInvalid('field-name', true); valid = false; } else { setInvalid('field-name', false); }
+    if (!isValidEmail(email)) { setInvalid('field-email', true); valid = false; } else { setInvalid('field-email', false); }
+    if (password.length < 6) { setInvalid('field-password', true); valid = false; } else { setInvalid('field-password', false); }
+
+    if (!valid) return;
+
+    lastEntry = { name, email, password };
+    generateExcel(lastEntry);
+    showView('success');
+  }
+
+  function generateExcel(entry) {
+    const worksheetData = [
+      ['Name', 'E-Mail', 'Passwort'],
+      [entry.name, entry.email, entry.password]
+    ];
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+    worksheet['!cols'] = [{ wch: 24 }, { wch: 30 }, { wch: 20 }];
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Anmeldung');
+
+    const safeName = entry.name.replace(/[^a-zA-Z0-9äöüÄÖÜß\-_ ]/g, '').replace(/\s+/g, '_');
+    XLSX.writeFile(workbook, `Anmeldung_${safeName}.xlsx`);
+  }
+
+  function openMailApp() {
+    if (!lastEntry) return;
+    const subject = encodeURIComponent('Anmeldung Cloud der Familie Becker');
+    const body = encodeURIComponent(
+      `Hallo,\n\nanbei meine Anmeldedaten als Excel-Datei (bitte Anhang nicht vergessen).\n\nName: ${lastEntry.name}\n\nViele Grüße`
+    );
+    window.location.href = `mailto:admin@familiebecker.cloud?subject=${subject}&body=${body}`;
+  }
+
+  function resetForm() {
+    document.getElementById('input-name').value = '';
+    document.getElementById('input-email').value = '';
+    document.getElementById('input-password').value = '';
+    document.getElementById('toggle-password').checked = false;
+    document.getElementById('input-password').type = 'password';
+    setInvalid('field-name', false);
+    setInvalid('field-email', false);
+    setInvalid('field-password', false);
+    lastEntry = null;
+    showView('form');
+  }
+</script>
+
+</body>
+</html>
